@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--configuration 은 로그 설정을 위한 최상위 요소-->
+<!-- 60초마다 설정 파일의 변경을 확인 하여 변경시 갱신 -->
+<configuration scan="true" scanPeriod="10 seconds">
+
+    <!-- 로그파일 저장 경로 -->
+    <!--property name = " " -> 변수명 설정-->
+    <!-- value = "프로젝트 경로의 +  /logs"-->
+    <property name="LOG_PATH" value="./logs" />
+    <property name ="LOG_FILE_NAME" value = "/ByteClone.log"/>
+    <property name ="ERR_LOG_FILE_NAME" value = "/ByteClone.log_error"/>
+
+    <!-- CONSOLE -->
+    <!--appender -> 로그가 출력되는 위치 (콘솔에 출력할지, 파일로 출력 할지 등의 설정), 현재는 appender name = "CONSOLE" 콘솔에 출력-->
+    <!--ch.qos.logback.core.ConsoleAppender-->
+    <!--콘솔에 log를 찍기 위함-->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+
+    <!--layout Pattern -> 로그의 패턴을 설정-->
+        <!-- 로그 레벨 -->
+        <!--
+            1) ERROR : 오류 메시지 표시
+            2) WARN  : 경고성 메시지 표시
+            3) INFO  : 정보성 메시지 표시
+            4) DEBUG : 디버깅하기 위한 메시지 표시
+            5) TRACE :  Debug보다 훨씬 상세한 메시지 표시
+
+            아래에서는 info로 설정하였는데, 이 경우엔 INFO 보다 위에 있는 DEBUG와 TRACE는 표시하지 않는다.
+            TRACE < DEBUG < INFO < WARN < ERROR < FATAL
+
+            https://goddaehee.tistory.com/206
+        -->
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+                [%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} : %30logger{5} - %msg%n
+            </Pattern>
+        </layout>
+
+    </appender>
+    <!-- // CONSOLE -->
+
+    <!-- 파일에 로그 출력 세팅-->
+    <!--ch.qos.logback.core.rolling.RollingFileAppender &ndash;&gt; 여러개의 파일을 순회하면서 log를 찍음-->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+        <file>${LOG_PATH}/${LOG_FILE_NAME}.log</file>
+
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch> <!-- 해당 레벨만 기록한다. -->
+            <onMismatch>DENY</onMismatch> <!-- 다른 수준의 레벨은 기록하지 않는다.(상위 레벨도 기록 안함), 상위 수준의 레벨에 대한 기록을 원하면 ACCEPT 로 하면 기록된다. -->
+        </filter> <!-- 레벨별 필터링이 필요없을 경우 filter class 관련된 부분을 삭제하면 됨-->
+
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+                [%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} : %30logger{5} - %msg%n
+            </Pattern>
+        </layout>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/%d{yyyy-MM-dd}/${LOG_FILE_NAME}_%i.log</fileNamePattern>
+
+            <!--파일당 최고 용량 -> 보통 10MB-->
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>10MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+
+            <!-- 로그파일 최대 보관주기 -> 현재 30일 -->
+            <maxHistory>30</maxHistory>
+
+        </rollingPolicy>
+    </appender>
+
+    <!--파일에 error 로그 출력 세팅-->
+    <appender name = "ERROR" class ="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class ="ch.qos.logback.classic.filter.LevelFilter">
+            <level>error</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <file>${LOG_PATH}/${ERR_LOG_FILE_NAME}.log</file>
+
+        <!-- 로그 패턴 설정 -->
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+                [%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} : %30logger{5} - %msg%n
+            </Pattern>
+        </layout>
+
+        <!-- 롤링 정책 -->
+        <rollingPolicy class = "ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- gz, zip 등을 넣을 경우 자동 로그파일 압축 -->
+            <fileNamePattern>${LOG_PATH}/%d{yyyy-MM-dd}/${ERR_LOG_FILE_NAME}_%i.log</fileNamePattern>
+
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <!-- 파일당 최고 용량 -->
+                <maxFileSize>10MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+
+            <!-- 로그파일 최대 보관주기 -->
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+<!--    info 레벨의 로그을 콘솔레 출력한다.-->
+    <root level="info">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE" />
+        <appender-ref ref="ERROR" />
+    </root>
+
+    <!-- 특정패키지 로깅레벨 설정 -->
+<!--    로거가 발생될 때, 설정해둔 파일을 기록한다. -> 추가 공부 필요-->
+<!--    <logger name="org.apache.ibatis" level="DEBUG" additivity="false">-->
+<!--        <appender-ref ref="CONSOLE"/>-->
+<!--        <appender-ref ref="FILE"/>-->
+<!--        <appender-ref ref="Error"/>-->
+<!--    </logger>-->
+
+</configuration>
